@@ -1,0 +1,6 @@
+# Target: Python 3.10 (corpus build ran on 3.10.12)
+datasets==5.0.1
+huggingface_hub==1.29.0
+tokenizers==0.22.2
+text-dedup==0.4.1
+gcsfs==2025.3.0
