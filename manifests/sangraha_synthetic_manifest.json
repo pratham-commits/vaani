@@ -1,0 +1,13 @@
+{
+  "source": {
+    "name": "sangraha_synthetic",
+    "hf_id": "ai4bharat/sangraha",
+    "data_dir": "synthetic/guj_Gujr",
+    "max_docs": 8000000
+  },
+  "seen": 5603976,
+  "kept": 4977140,
+  "dropped": 626836,
+  "shards": 50,
+  "finished_utc": "2026-08-30T22:22:31.034882+00:00"
+}

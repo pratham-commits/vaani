@@ -1,0 +1,12 @@
+{
+  "source": {
+    "name": "fineweb2_gu",
+    "hf_id": "HuggingFaceFW/fineweb-2",
+    "config": "guj_Gujr"
+  },
+  "seen": 2127094,
+  "kept": 2094479,
+  "dropped": 32615,
+  "shards": 21,
+  "finished_utc": "2026-08-30T23:40:15.530641+00:00"
+}

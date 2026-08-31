@@ -1,0 +1,12 @@
+{
+  "source": {
+    "name": "wikipedia_gu",
+    "hf_id": "wikimedia/wikipedia",
+    "config": "20231101.gu"
+  },
+  "seen": 30445,
+  "kept": 29251,
+  "dropped": 1194,
+  "shards": 1,
+  "finished_utc": "2026-08-30T22:23:12.294525+00:00"
+}

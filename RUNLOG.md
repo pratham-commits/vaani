@@ -14,40 +14,54 @@
 - venv: ~/.venv
 - Build package versions: datasets 5.0.1, huggingface_hub 1.29.0, tokenizers 0.22.2, numpy 2.2.6, scipy 1.15.3
 
-## Dataset
-- Source: ai4bharat/sangraha (Hugging Face, CC-BY-4.0, arXiv:2403.06350)
-- Subset used: verified/guj (Gujarati, native script only)
-- Access: load_dataset(..., data_dir="verified/guj", split="train", streaming=True)
-- Reported size (guj verified): ~3,647.9M tokens
+## Datasets used (all Gujarati, native script)
+- ai4bharat/sangraha (CC-BY-4.0, arXiv:2403.06350): verified/guj, unverified/guj, synthetic/guj_Gujr
+- wikimedia/wikipedia (CC-BY-SA): 20231101.gu
+- HuggingFaceFW/fineweb-2 (ODC-BY): guj_Gujr   [replaced cc100 - script-based, unsupported on datasets 5.x]
 
-## Step 1 : Corpus build (29 Aug 2026 evening – 30 Aug 2026 ~08:00 IST)
+## Step 1 - Verified corpus build (29 Aug 2026 eve - 30 Aug 2026 ~08:00 IST)
 - Script: ~/build_corpus.py
-- First attempt used data_dir="verified/guj" 
-- Ran inside tmux session "prep": `python3 ~/build_corpus.py`
+- data_dir="verified/guj"; ran inside tmux session "prep": python3 ~/build_corpus.py
 
 Filters (doc kept only if all pass):
 - Unicode NFKC normalization
 - length: 200 <= chars <= 100000
 - replacement char (U+FFFD) ratio < 0.001
-- Gujarati script (U+0A80–U+0AFF) ratio over non-space chars >= 0.70
+- Gujarati script (U+0A80-U+0AFF) ratio over non-space chars >= 0.70
 
-Output format:
-- gzipped JSONL, one {"text": ...} per line, UTF-8, ensure_ascii=False
-- shard size: 100000 docs -> guj_NNNN.jsonl.gz
+Output: gzipped JSONL, {"text": ...} per line, UTF-8; shard size 100000 -> NNNN.jsonl.gz
 
 Logs (sample + final):
 ```
 guj: seen 100,000 | kept 98,188 | dropped 1,812
-guj: seen 3,900,000 | kept 3,827,672 | dropped 72,328
 [done] guj: kept 3,896,437, dropped 73,660, shards 39
 ```
+Results: seen 3,970,097 | kept 3,896,437 (98.1%) | 39 shards | 4.9 GB
 
-Results:
-- rows seen: 3,970,097
-- kept: 3,896,437 (98.1%)
-- dropped: 73,660
-- shards: 39 (guj_0000 – guj_0038; last shard 96,437 docs)
-- size on disk: 4.9 GB (~/corpus)
+## Step 2 - Store verified corpus to GCS (30 Aug 2026 ~08:00 IST)
+- Auth: gcloud auth login on VM (default service account lacked storage scope; 403)
+- gcloud storage buckets create $BUCKET --location=$REGION
+- gcloud storage cp ~/corpus/*.jsonl.gz $BUCKET/sangraha_verified_guj/   (39 shards, ~764 MiB/s)
+
+## Step 3 - Multi-source corpus build (30 Aug 2026)
+- Script: ~/build_corpus.py (all sources); same filters as Step 1
+- Per-source results:
+```
+sangraha_unverified : seen 586,977   | kept 582,021   | dropped 4,956   | 6 shards
+sangraha_synthetic  : seen 5,603,976 | kept 4,977,140 | dropped 626,836 | 50 shards  (8M cap not reached)
+wikipedia_gu        : seen 30,445    | kept 29,251    | dropped 1,194   | 1 shard
+fineweb2_gu         : seen 2,127,094 | kept 2,094,479 | dropped 32,615  | 21 shards
+```
+- Corpus totals (all 5 sources incl. verified):
+  - kept docs: 11,579,328
+  - real 6,602,188 (57%) / synthetic 4,977,140 (43%)  -> real is the majority
+  - est. ~11-12B tokens
+- total shards = 39 + 50 + 21 + 6 + 1 = 117
+
+## Step 4 - Store multi-source corpus to GCS (31 Aug 2026)
+- gcloud storage cp -r ~/corpus_raw $BUCKET/corpus_raw/   (78 new shards)
+- Bucket total: 117 jsonl.gz (39 verified + 78 new)
+- Paths: verified at $BUCKET/sangraha_verified_guj/ ; other 4 under $BUCKET/corpus_raw/... (nested prefix - cosmetic)
 
 ## Not yet done
 - Deduplication (MinHash-LSH)
@@ -56,4 +70,3 @@ Results:
 - Tokenizer training
 - Tokenize + pack
 - Model training
-

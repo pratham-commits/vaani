@@ -4,3 +4,7 @@ corpus/
 *.jsonl.gz
 *.env
 *token*
+docs/
+.DS_Store
+. DS_Store?
+**/.DS_Store

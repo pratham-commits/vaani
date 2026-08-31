@@ -1,0 +1,12 @@
+{
+  "source": {
+    "name": "sangraha_unverified",
+    "hf_id": "ai4bharat/sangraha",
+    "data_dir": "unverified/guj"
+  },
+  "seen": 586977,
+  "kept": 582021,
+  "dropped": 4956,
+  "shards": 6,
+  "finished_utc": "2026-08-30T18:05:26.270040+00:00"
+}
