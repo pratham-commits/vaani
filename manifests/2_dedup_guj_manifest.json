@@ -1,0 +1,31 @@
+{
+  "step": "dedup",
+  "method": "minhash_lsh",
+  "tool": "text-dedup==0.4.1",
+  "date": "2026-09-01",
+  "params": { "ngram": 5, "num_perm": 128, "threshold": 0.8, "batch_size": 10000 },
+  "input": {
+    "shards": 117,
+    "docs": 11579328,
+    "note": "multi-source build: verified 3896437 + unverified 582021 + synthetic 4977140 + wiki 29251 + fineweb2 2094479"
+  },
+  "output": {
+    "docs": 10429760,
+    "removed": 1149568,
+    "removed_pct": 9.93,
+    "duplicate_edges": 2424668
+  },
+  "export": {
+    "format": "jsonl.gz",
+    "shards": 105,
+    "docs_per_shard": 100000,
+    "size_gb": 23,
+    "compresslevel": 1
+  },
+  "storage": { "gcs_prefix": "$BUCKET/dedup_guj/", "shards_uploaded": 105 },
+  "timings_sec": {
+    "loading": 45, "minhashing": 21, "clustering": 945,
+    "filtering": 654, "saving": 315, "total": 1989
+  },
+  "machine": "e2-highmem-16 (16 vCPU / 128 GB), 500 GB pd-balanced, asia-south1-c"
+}
