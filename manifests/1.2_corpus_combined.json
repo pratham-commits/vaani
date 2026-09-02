@@ -1,0 +1,22 @@
+{
+  "step": "corpus_build",
+  "sources": 5,
+  "seen": 12318589,
+  "kept": 11579328,
+  "shards": 117,
+  "size_gb_approx": 27,
+  "composition": {
+    "real_docs": 6602188,
+    "real_pct": 57.0,
+    "synthetic_docs": 4977140,
+    "synthetic_pct": 43.0
+  },
+  "per_source_kept": {
+    "sangraha_verified": 3896437,
+    "sangraha_unverified": 582021,
+    "sangraha_synthetic": 4977140,
+    "wikipedia_gu": 29251,
+    "fineweb2_gu": 2094479
+  },
+  "est_tokens_billion": "11-12"
+}

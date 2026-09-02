@@ -116,6 +116,18 @@ Gujarati-safe: danda (।) + period kept as terminators; Gujarati block = letter
             ZWJ/ZWNJ preserved; in-context English kept, English-dominant junk dropped.
 Stored: gcloud storage cp ~/clean_guj/*.jsonl.gz $BUCKET/clean_guj/  (104 shards + manifest)
 
+## Step 1.5 – English/Gujarati composition check (02 Sep 2026)
+Script: measure_english.py (regex char-count pass over clean_guj), e2-standard-8, ~126 min.
+Purpose: quantify English (Latin) content in the cleaned corpus before locking it.
+
+Result (english_report.json):
+- docs: 10,372,946 (100% contain Gujarati)
+- corpus Gujarati: 94.4% of chars | corpus Latin: 0.62% of chars
+- docs with any English: 34.5%; 65.5% pure Gujarati, ~96% under 5% Latin, ~1.5% above 10%.
+- English "word" [A-Za-z0-9]+: 174.5M total, 1.34M unique, avg 16.8/doc
+  (unique + avg are number-inflated by the digit-inclusive definition).
+Conclusion: English is thin, natural code-switching (0.62% of chars) -> KEPT in corpus.
+Stored: gcloud storage cp ~/english_report.json $BUCKET/clean_guj/
 
 ## Not yet done
 - Deduplication (MinHash-LSH)

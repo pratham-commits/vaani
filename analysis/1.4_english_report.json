@@ -1,0 +1,24 @@
+{
+  "docs": 10372946,
+  "docs_with_gujarati": 10372946,
+  "pct_docs_with_gujarati": 100.0,
+  "docs_with_english": 3577351,
+  "pct_docs_with_english": 34.487,
+  "corpus_gujarati_pct": 94.429,
+  "corpus_latin_pct": 0.624,
+  "mean_per_doc_latin_pct": 0.722,
+  "total_english_letters": 153094713,
+  "total_english_words": 174563008,
+  "unique_english_words": 1336271,
+  "pct_unique_english_words": 0.765,
+  "avg_english_words_per_doc": 16.829,
+  "doc_distribution_by_latin_share": {
+    "0 (none)": 6795595,
+    "<1%": 2033142,
+    "1-5%": 1115719,
+    "5-10%": 275169,
+    "10-20%": 134508,
+    "20-30%": 18813
+  },
+  "english_word_definition": "[A-Za-z0-9]+"
+}
