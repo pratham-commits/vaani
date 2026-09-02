@@ -3,7 +3,7 @@ __pycache__/
 corpus/
 *.jsonl.gz
 *.env
-*token*
+# *token*
 docs/
 .DS_Store
 . DS_Store?

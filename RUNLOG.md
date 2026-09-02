@@ -129,6 +129,23 @@ Result (english_report.json):
 Conclusion: English is thin, natural code-switching (0.62% of chars) -> KEPT in corpus.
 Stored: gcloud storage cp ~/english_report.json $BUCKET/clean_guj/
 
+## Step 1.6 – Tokenizer training (02 Sep 2026)
+Script: train_tokenizer.py (HF tokenizers 0.22.2), e2-standard-8, venv.
+Common settings: vocab 32K, NFKC, ~1B-char sample from clean_guj (103 shards),
+5000 held-out docs (clean_00103 = fineweb2). Metric: fertility (tokens/word, lower better).
+
+| config    | model   | encoding    | pre-tokenizer            | tok/word ↓ | char/tok ↑ | train min |
+|-----------|---------|-------------|--------------------------|-----------|-----------|-----------|
+| bpe_byte  | BPE     | byte-level  | LLaMA-4 regex + ByteLevel| 2.8132    | 2.10      | 3.1       |
+| uni_byte  | Unigram | byte-level  | LLaMA-4 regex + ByteLevel| 2.9322    | 2.02      | 4.2       |
+| bpe_char  | BPE     | char-level  | Metaspace                | 1.3028    | 4.54      | 3.8       |  ← CHOSEN
+| uni_char  | Unigram | char-level  | Metaspace                | 1.3490    | 4.38      | 26.2      |
+
+Sanity check (bpe_char): "ગુજરાત ભારતના પશ્ચિમ ... છે." → 17 tokens / 17 words (1.0),
+conjuncts (પશ્ચિમ, વિજ્ઞાન, ક્ષેત્રે, રહ્યું) intact.
+Winner: bpe_char (char-level BPE, NFKC, Metaspace, 32K) — 1.30 tok/word, beats multilingual
+SOTA on gu (MUTANT 1.77, Sutra 2.15). Saved: tokenizer/tokenizer_bpe_char.json.
+
 ## Not yet done
 - Deduplication (MinHash-LSH)
 - Held-out Gujarati benchmark

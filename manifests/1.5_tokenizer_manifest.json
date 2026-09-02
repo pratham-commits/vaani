@@ -1,0 +1,22 @@
+{
+  "step": "tokenizer",
+  "date": "2026-09-02",
+  "library": "huggingface tokenizers 0.22.2",
+  "vocab_size": 32000,
+  "normalizer": "NFKC",
+  "special_tokens": ["<pad>", "<bos>", "<eos>", "<unk>"],
+  "train_sample_chars": 1000000000,
+  "heldout_docs": 5000,
+  "heldout_source": "clean_00103.jsonl.gz (fineweb2)",
+  "metric": "fertility = tokens/word (lower better)",
+  "experiments": [
+    {"config": "bpe_byte", "model": "BPE", "encoding": "byte-level", "pretok": "LLaMA-4 regex + ByteLevel", "tokens_per_word": 2.8132, "chars_per_token": 2.1013, "train_min": 3.1},
+    {"config": "uni_byte", "model": "Unigram", "encoding": "byte-level", "pretok": "LLaMA-4 regex + ByteLevel", "tokens_per_word": 2.9322, "chars_per_token": 2.016, "train_min": 4.2},
+    {"config": "bpe_char", "model": "BPE", "encoding": "char-level", "pretok": "Metaspace", "tokens_per_word": 1.3028, "chars_per_token": 4.5375, "train_min": 3.8, "chosen": true},
+    {"config": "uni_char", "model": "Unigram", "encoding": "char-level", "pretok": "Metaspace", "tokens_per_word": 1.349, "chars_per_token": 4.3819, "train_min": 26.2}
+  ],
+  "chosen": "bpe_char",
+  "chosen_file": "tokenizer/tokenizer_bpe_char.json",
+  "rationale": "char-level BPE gave lowest fertility (1.30) and fast training; byte-level wastes vocab reassembling 3-byte Gujarati chars at 32K vocab.",
+  "sanity_check": "17 tokens / 17 words on a clean sentence; conjuncts intact."
+}
