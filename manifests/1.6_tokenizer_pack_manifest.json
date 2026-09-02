@@ -1,0 +1,14 @@
+{
+  "step": "tokenize_pack",
+  "date": "2026-09-02",
+  "tokenizer": "tokenizer_bpe_char.json",
+  "dtype": "uint16",
+  "eos_between_docs": true,
+  "val_frac": 0.001,
+  "train_tokens": 6779391293,
+  "val_tokens": 6831554,
+  "total_tokens": 6786222847,
+  "train_bin_gb": 13.56,
+  "val_bin_gb": 0.01,
+  "minutes": 62.1
+}

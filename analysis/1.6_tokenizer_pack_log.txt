@@ -1,0 +1,276 @@
+prathamsshah724@vaani-prep:~$ python3 -c "import ast; ast.parse(open('/home/prathamsshah724/train_tokenizer.py').read());
+print('OK')"
+python3 train_tokenizer.py --input ~/clean_guj --out-dir ~/tokenizer
+OK
+Traceback (most recent call last):
+  File "/home/prathamsshah724/train_tokenizer.py", line 22, in <module>
+    from tokenizers import Tokenizer, Regex, decoders
+ModuleNotFoundError: No module named 'tokenizers'
+prathamsshah724@vaani-prep:~$ source ~/.venv/bin/activate
+(.venv) prathamsshah724@vaani-prep:~$ python3 -c "import tokenizers; print(tokenizers.__version__)"   # expect 0.22.2
+python3 train_tokenizer.py --input ~/clean_guj --out-dir ~/tokenizer
+0.22.2
+found 104 shards
+held out 5000 docs (from clean_00103.jsonl.gz); training on 103 shards up to 1.0 GB text
+
+=== training BPE ===
+[00:02:43] Pre-processing sequences       ████████████████████████████████████████████████████████████ 0        /        0
+[00:00:01] Tokenize words                 ████████████████████████████████████████████████████████████ 489171   /   489171
+[00:00:00] Count pairs                    ████████████████████████████████████████████████████████████ 489171   /   489171
+[00:00:07] Compute merges                 ████████████████████████████████████████████████████████████ 31740    /    31740
+
+=== training Unigram ===
+[00:02:53] Pre-processing sequences       ████████████████████████████████████████████████████████████ 0        /        0
+[00:00:01] Suffix array seeds             ████████████████████████████████████████████████████████████ 489171   /   489171
+[00:00:54] EM training                    ████████████████████████████████████████████████████████████ 22       /       22
+
+=== FERTILITY REPORT (held-out Gujarati) ===
+model       tok/word↓  char/tok↑   vocab  train_min
+bpe            2.8132     2.1013   32000        3.2
+unigram        2.9322      2.016   32000        4.2
+
+Lower tok/word = better. Saved to /home/prathamsshah724/tokenizer
+(.venv) prathamsshah724@vaani-prep:~$ nano ~/train_tokenizer.py
+(.venv) prathamsshah724@vaani-prep:~$ nano ~/train2_tokenizer.py
+(.venv) prathamsshah724@vaani-prep:~$ python3 train2_tokenizer.py --input ~/clean_guj --out-dir ~/tokenizer
+found 104 shards
+held out 5000 docs; training on 103 shards up to 1.0B chars
+
+=== training bpe_byte ===
+[00:02:40] Pre-processing sequences       ████████████████████████████████████████████████████████████ 0        /        0
+[00:00:01] Tokenize words                 ████████████████████████████████████████████████████████████ 489171   /   489171
+[00:00:00] Count pairs                    ████████████████████████████████████████████████████████████ 489171   /   489171
+[00:00:07] Compute merges                 ████████████████████████████████████████████████████████████ 31740    /    31740
+
+=== training bpe_char ===
+[00:01:25] Pre-processing sequences       ████████████████████████████████████████████████████████████ 0        /        0
+[00:00:13] Tokenize words                 ████████████████████████████████████████████████████████████ 5920671  /  5920671
+[00:00:10] Count pairs                    ████████████████████████████████████████████████████████████ 5920671  /  5920671
+[00:01:23] Compute merges                 ████████████████████████████████████████████████████████████ 28861    /    28861
+
+=== training uni_char ===
+[00:01:17] Pre-processing sequences       ████████████████████████████████████████████████████████████ 0        /        0
+[00:00:29] Suffix array seeds             ████████████████████████████████████████████████████████████ 5920671  /  5920671
+[00:24:09] EM training                    ████████████████████████████████████████████████████████████ 24       /       24
+
+=== FERTILITY REPORT (held-out Gujarati) ===
+config      tok/word↓  char/tok↑   vocab    min
+bpe_byte       2.8132     2.1013   32000    3.1
+bpe_char       1.3028     4.5375   32000    3.8
+uni_char        1.349     4.3819   32000   26.2
+
+Lower tok/word = better. Saved to /home/prathamsshah724/tokenizer
+(.venv) prathamsshah724@vaani-prep:~$ python3 -c "
+from tokenizers import Tokenizer
+t = Tokenizer.from_file('/home/prathamsshah724/tokenizer/tokenizer_bpe_char.json')
+s = 'ગુજરાત ભારતના પશ્ચિમ ભાગમાં આવેલું એક રાજ્ય છે. વિજ્ઞાન અને ટેકનોલોજી ક્ષેત્રે ભારત આગળ વધી રહ્યું છે.'
+e = t.encode(s)
+print('tokens:', e.tokens)
+print('n_tokens:', len(e.ids), '| n_words:', len(s.split()))
+"
+tokens: ['▁ગુજરાત', '▁ભારતના', '▁પશ્ચિમ', '▁ભાગમાં', '▁આવેલું', '▁એક', '▁રાજ્ય', '▁છે.', '▁વિજ્ઞાન', '▁અને', '▁ટેકનોલોજી', '▁ક્ષેત્રે', '
+▁ભારત', '▁આગળ', '▁વધી', '▁રહ્યું', '▁છે.']
+n_tokens: 17 | n_words: 17
+(.venv) prathamsshah724@vaani-prep:~$ python3 -c "
+from tokenizers import Tokenizer
+import gzip, json
+t = Tokenizer.from_file('/home/prathamsshah724/tokenizer/tokenizer_bpe_char.json')
+s = next(json.loads(l)['text'] for l in gzip.open('/home/prathamsshah724/clean_guj/clean_00000.jsonl.gz','rt'))[:400]
+dec = t.decode(t.encode(s).ids)
+print('lossless match:', dec.strip() == s.strip())
+print('orig:', s[:100])
+print('deco:', dec[:100])
+"
+lossless match: True
+orig: સાયબરજગતમાં ‘દો કિસ્મ કે લોગ હોતે હૈં - એક જો ટેક્નોલોજી કા સહી ઉપયોગ કરતે હૈં, ઔર દૂસરે જો...' આ ‘દ
+deco: સાયબરજગતમાં ‘દો કિસ્મ કે લોગ હોતે હૈં - એક જો ટેક્નોલોજી કા સહી ઉપયોગ કરતે હૈં, ઔર દૂસરે જો...' આ ‘દ
+(.venv) prathamsshah724@vaani-prep:~$ nano ~/tokenize_pack.py
+(.venv) prathamsshah724@vaani-prep:~$ source ~/.venv/bin/activate
+(.venv) prathamsshah724@vaani-prep:~$ python3 -c "import ast; ast.parse(open('/home/prathamsshah724/tokenize_pack.py').rea
+d()); print('OK')"
+OK
+(.venv) prathamsshah724@vaani-prep:~$ python3 tokenize_pack.py --input ~/clean_guj --tokenizer ~/tokenizer/tokenizer_bpe_c
+har.json --out-dir ~/packed
+104 shards | tokenizer tokenizer_bpe_char.json | val every 1000 docs | 8 procs
+^CTraceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/pool.py", line 856, in next
+    item = self._items.popleft()
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/prathamsshah724/tokenize_pack.py", line 137, in <module>
+    main()
+  File "/home/prathamsshah724/tokenize_pack.py", line 101, in main
+    for idx, ntr, nva in pool.imap_unordered(_tok_shard, jobs):
+  File "/usr/lib/python3.10/multiprocessing/pool.py", line 861, in next
+    self._cond.wait(timeout)
+  File "/usr/lib/python3.10/threading.py", line 320, in wait
+    waiter.acquire()
+KeyboardInterrupt
+
+(.venv) prathamsshah724@vaani-prep:~$ python3 tokenize_pack.py --input ~/clean_guj --tokenizer ~/tokenizer/tokenizer_bpe_c
+har.json --out-dir ~/packed 2>&1 | tee ~/packed/pack_log.txt
+104 shards | tokenizer tokenizer_bpe_char.json | val every 1000 docs | 8 procs
+[1/104] shard 4 done | train+=47,473,501 val+=44,891 | 3.3m
+[2/104] shard 6 done | train+=46,688,154 val+=48,549 | 3.3m
+[3/104] shard 7 done | train+=46,490,070 val+=46,231 | 3.4m
+[4/104] shard 3 done | train+=48,537,003 val+=44,228 | 3.4m
+[5/104] shard 5 done | train+=47,169,054 val+=49,660 | 3.4m
+[6/104] shard 2 done | train+=49,893,633 val+=42,428 | 3.5m
+[7/104] shard 1 done | train+=51,289,241 val+=48,426 | 3.7m
+[8/104] shard 0 done | train+=54,800,381 val+=57,489 | 3.9m
+[9/104] shard 10 done | train+=45,441,567 val+=34,909 | 6.5m
+[10/104] shard 9 done | train+=45,647,669 val+=46,790 | 6.6m
+[11/104] shard 11 done | train+=45,094,140 val+=41,906 | 6.6m
+[12/104] shard 8 done | train+=45,899,812 val+=38,543 | 6.6m
+[13/104] shard 12 done | train+=46,300,035 val+=44,245 | 6.7m
+[14/104] shard 13 done | train+=57,672,643 val+=43,993 | 7.3m
+[15/104] shard 14 done | train+=57,777,459 val+=44,944 | 7.6m
+[16/104] shard 15 done | train+=57,859,073 val+=55,920 | 7.8m
+[17/104] shard 17 done | train+=57,650,380 val+=62,011 | 10.5m
+[18/104] shard 16 done | train+=57,861,291 val+=55,106 | 10.5m
+[19/104] shard 18 done | train+=57,435,032 val+=48,611 | 10.5m
+[20/104] shard 20 done | train+=57,735,741 val+=75,532 | 10.6m
+[21/104] shard 19 done | train+=57,927,811 val+=81,928 | 10.6m
+[22/104] shard 21 done | train+=57,184,922 val+=59,392 | 11.1m
+[23/104] shard 22 done | train+=57,552,974 val+=54,520 | 11.5m
+[24/104] shard 23 done | train+=57,409,961 val+=65,901 | 11.7m
+[25/104] shard 25 done | train+=57,438,357 val+=52,220 | 14.9m
+[26/104] shard 24 done | train+=57,470,140 val+=58,508 | 14.9m
+[27/104] shard 26 done | train+=57,617,830 val+=47,269 | 15.0m
+[28/104] shard 27 done | train+=57,632,990 val+=64,040 | 15.0m
+[29/104] shard 28 done | train+=57,612,174 val+=60,783 | 15.0m
+[30/104] shard 29 done | train+=57,482,510 val+=67,475 | 15.5m
+[31/104] shard 30 done | train+=57,380,038 val+=62,461 | 15.8m
+[32/104] shard 31 done | train+=57,548,760 val+=63,286 | 16.1m
+[33/104] shard 32 done | train+=57,937,634 val+=57,331 | 18.8m
+[34/104] shard 33 done | train+=57,858,660 val+=50,747 | 18.8m
+[35/104] shard 35 done | train+=57,663,967 val+=55,605 | 18.9m
+[36/104] shard 34 done | train+=57,896,287 val+=58,910 | 18.9m
+[37/104] shard 36 done | train+=57,532,956 val+=63,895 | 18.9m
+[38/104] shard 37 done | train+=57,852,165 val+=61,212 | 19.4m
+[39/104] shard 38 done | train+=57,645,361 val+=50,485 | 19.7m
+[40/104] shard 39 done | train+=57,451,402 val+=74,606 | 20.0m
+[41/104] shard 41 done | train+=57,926,699 val+=55,697 | 22.7m
+[42/104] shard 40 done | train+=57,661,454 val+=72,754 | 22.8m
+[43/104] shard 42 done | train+=57,749,351 val+=56,646 | 22.8m
+[44/104] shard 44 done | train+=57,635,134 val+=49,346 | 22.9m
+[45/104] shard 43 done | train+=57,749,364 val+=50,630 | 22.9m
+[46/104] shard 45 done | train+=57,512,224 val+=70,088 | 23.2m
+[47/104] shard 46 done | train+=57,272,885 val+=46,857 | 23.7m
+[48/104] shard 47 done | train+=57,421,567 val+=57,577 | 24.0m
+[49/104] shard 48 done | train+=57,622,655 val+=40,303 | 27.0m
+[50/104] shard 49 done | train+=67,885,050 val+=67,314 | 27.8m
+[51/104] shard 51 done | train+=71,828,787 val+=62,279 | 28.4m
+[52/104] shard 50 done | train+=71,791,747 val+=60,293 | 28.4m
+[53/104] shard 52 done | train+=71,769,151 val+=97,865 | 28.4m
+[54/104] shard 53 done | train+=71,703,106 val+=80,281 | 28.7m
+[55/104] shard 54 done | train+=71,585,055 val+=58,129 | 29.2m
+[56/104] shard 55 done | train+=71,988,655 val+=60,754 | 29.4m
+[57/104] shard 56 done | train+=71,904,816 val+=49,553 | 32.1m
+[58/104] shard 57 done | train+=71,304,890 val+=60,973 | 32.7m
+[59/104] shard 59 done | train+=71,038,464 val+=68,917 | 33.3m
+[60/104] shard 58 done | train+=71,287,124 val+=60,949 | 33.4m
+[61/104] shard 60 done | train+=72,136,630 val+=82,139 | 33.5m
+[62/104] shard 61 done | train+=72,078,996 val+=79,191 | 33.8m
+[63/104] shard 62 done | train+=71,189,923 val+=75,792 | 34.2m
+[64/104] shard 63 done | train+=71,676,049 val+=89,940 | 34.4m
+[65/104] shard 64 done | train+=72,364,754 val+=71,272 | 37.6m
+[66/104] shard 65 done | train+=71,644,850 val+=73,374 | 38.1m
+[67/104] shard 66 done | train+=71,859,384 val+=72,584 | 38.8m
+[68/104] shard 67 done | train+=71,879,989 val+=60,032 | 38.8m
+[69/104] shard 68 done | train+=71,462,413 val+=61,035 | 38.9m
+[70/104] shard 69 done | train+=71,501,451 val+=69,999 | 39.2m
+[71/104] shard 70 done | train+=71,550,585 val+=78,259 | 39.6m
+[72/104] shard 71 done | train+=71,817,542 val+=46,454 | 39.9m
+[73/104] shard 72 done | train+=72,048,262 val+=72,822 | 42.6m
+[74/104] shard 73 done | train+=71,655,431 val+=54,480 | 43.2m
+[75/104] shard 74 done | train+=71,454,419 val+=64,270 | 43.8m
+[76/104] shard 75 done | train+=71,600,872 val+=80,494 | 43.9m
+[77/104] shard 76 done | train+=71,729,609 val+=59,521 | 44.0m
+[78/104] shard 77 done | train+=71,334,697 val+=87,296 | 44.2m
+[79/104] shard 78 done | train+=71,394,865 val+=95,989 | 44.7m
+[80/104] shard 79 done | train+=71,473,012 val+=56,200 | 44.9m
+[81/104] shard 80 done | train+=71,779,464 val+=62,439 | 48.1m
+[82/104] shard 81 done | train+=71,650,037 val+=86,229 | 48.6m
+[83/104] shard 82 done | train+=71,749,718 val+=80,777 | 49.1m
+[84/104] shard 84 done | train+=71,341,605 val+=81,193 | 49.3m
+[85/104] shard 83 done | train+=71,947,103 val+=62,935 | 49.3m
+[86/104] shard 85 done | train+=71,771,976 val+=63,671 | 49.5m
+[87/104] shard 86 done | train+=71,201,775 val+=86,698 | 50.0m
+[88/104] shard 87 done | train+=71,640,454 val+=68,342 | 50.4m
+[89/104] shard 88 done | train+=71,275,663 val+=70,008 | 53.0m
+[90/104] shard 89 done | train+=71,444,141 val+=104,391 | 53.6m
+[91/104] shard 90 done | train+=71,902,089 val+=91,376 | 54.2m
+[92/104] shard 92 done | train+=71,252,349 val+=63,431 | 54.3m
+[93/104] shard 91 done | train+=71,248,476 val+=84,700 | 54.3m
+[94/104] shard 93 done | train+=72,330,523 val+=68,216 | 54.6m
+[95/104] shard 94 done | train+=85,164,745 val+=84,510 | 56.2m
+[96/104] shard 99 done | train+=52,605,057 val+=48,131 | 58.1m
+[97/104] shard 100 done | train+=52,407,620 val+=59,369 | 58.1m
+[98/104] shard 101 done | train+=52,278,500 val+=59,608 | 58.6m
+[99/104] shard 98 done | train+=67,369,869 val+=63,386 | 59.2m
+[100/104] shard 102 done | train+=52,646,856 val+=52,032 | 59.7m
+[101/104] shard 103 done | train+=40,120,439 val+=34,566 | 60.2m
+[102/104] shard 95 done | train+=152,696,361 val+=143,662 | 60.4m
+[103/104] shard 96 done | train+=145,038,858 val+=173,585 | 61.0m
+[104/104] shard 97 done | train+=163,222,926 val+=194,965 | 61.3m
+
+=== PACK DONE ===
+{
+  "step": "tokenize_pack",
+  "date": "2026-09-02",
+  "tokenizer": "tokenizer_bpe_char.json",
+  "dtype": "uint16",
+  "eos_between_docs": true,
+  "val_frac": 0.001,
+  "train_tokens": 6779391293,
+  "val_tokens": 6831554,
+  "total_tokens": 6786222847,
+  "train_bin_gb": 13.56,
+  "val_bin_gb": 0.01,
+  "minutes": 62.1
+}
+(.venv) prathamsshah724@vaani-prep:~$ ls -lh ~/packed/
+export BUCKET=gs://commanding-iris-474607-u2-guj-corpus
+gcloud storage cp ~/packed/train.bin ~/packed/val.bin ~/packed/pack_manifest.json $BUCKET/packed/
+gcloud storage ls $BUCKET/packed/
+total 13G
+-rw-rw-r-- 1 prathamsshah724 prathamsshah724 6.8K Sep  2 19:34 pack_log.txt
+-rw-rw-r-- 1 prathamsshah724 prathamsshah724  316 Sep  2 19:34 pack_manifest.json
+-rw-rw-r-- 1 prathamsshah724 prathamsshah724  13G Sep  2 19:34 train.bin
+-rw-rw-r-- 1 prathamsshah724 prathamsshah724  14M Sep  2 19:34 val.bin
+WARNING: Parallel composite upload was turned ON to get the best performance on
+uploading large objects. If you would like to opt-out and instead
+perform a normal upload, run:
+`gcloud config set storage/parallel_composite_upload_enabled False`
+If you would like to disable this warning, run:
+`gcloud config set storage/parallel_composite_upload_enabled True`
+Note that with parallel composite uploads, your object might be
+uploaded as a composite object
+(https://cloud.google.com/storage/docs/composite-objects), which means
+that any user who downloads your object will need to use crc32c
+checksums to verify data integrity. gcloud storage is capable of
+computing crc32c checksums, but this might pose a problem for other
+clients.
+
+Copying file:///home/prathamsshah724/packed/train.bin to gs://commanding-iris-474607-u2-guj-corpus/packed/train.bin
+Copying file:///home/prathamsshah724/packed/val.bin to gs://commanding-iris-474607-u2-guj-corpus/packed/val.bin
+Copying file:///home/prathamsshah724/packed/pack_manifest.json to gs://commanding-iris-474607-u2-guj-corpus/packed/pack_ma
+nifest.json
+  Completed files 3/3 | 12.6GiB/12.6GiB | 687.0MiB/s
+
+Average throughput: 990.9MiB/s
+gs://commanding-iris-474607-u2-guj-corpus/packed/pack_manifest.json
+gs://commanding-iris-474607-u2-guj-corpus/packed/train.bin
+gs://commanding-iris-474607-u2-guj-corpus/packed/val.bin
+(.venv) prathamsshah724@vaani-prep:~$ ^[[200~tmux capture-pane -t pack -pS -200000 > ~/pack_log.txt
+tmux: command not found
+(.venv) prathamsshah724@vaani-prep:~$ wc -l ~/pack_log.txt
+0 /home/prathamsshah724/pack_log.txt
+(.venv) prathamsshah724@vaani-prep:~$ tmux capture-pane -t pack -pS -200000 > ~/pack_log.txt
+can't find pane: pack
+(.venv) prathamsshah724@vaani-prep:~$ tmux capture-pane -t tok -pS -200000 > ~/pack_log.txt
+

@@ -146,6 +146,21 @@ conjuncts (પશ્ચિમ, વિજ્ઞાન, ક્ષેત્રે, 
 Winner: bpe_char (char-level BPE, NFKC, Metaspace, 32K) — 1.30 tok/word, beats multilingual
 SOTA on gu (MUTANT 1.77, Sutra 2.15). Saved: tokenizer/tokenizer_bpe_char.json.
 
+## Step 1.7 – Tokenize + pack (03 Sep 2026)
+Script: tokenize_pack.py (multiprocess, 8 cores, HF tokenizers 0.22.2), e2-standard-8, venv.
+Tokenizer: tokenizer_bpe_char.json (char-level BPE, 32K). <eos> between docs. dtype uint16.
+Held-out: every 1000th doc (val-frac 0.001) -> val.bin (perplexity eval).
+
+Results (pack_manifest.json):
+- train_tokens : 6,779,391,293  (~6.78B)  -> train.bin, 13.56 GB
+- val_tokens   :     6,831,554  (~6.83M)  -> val.bin, 0.01 GB
+- total_tokens : 6,786,222,847  (~6.79B)
+- runtime      : 62.1 min  (~71M train tokens/shard; per-shard log in analysis/pack_log.txt)
+
+Token budget: ~62 tokens/param at 1 epoch (110M) -> plan 2-3 epochs (124-185 tok/param).
+Stored: gcloud storage cp ~/packed/{train.bin,val.bin,pack_manifest.json} $BUCKET/packed/
+
+
 ## Not yet done
 - Deduplication (MinHash-LSH)
 - Held-out Gujarati benchmark
