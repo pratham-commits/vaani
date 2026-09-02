@@ -1,0 +1,58 @@
+{
+  "step": "clean",
+  "date": "2026-09-02",
+  "input_docs": 10429760,
+  "kept": 10372946,
+  "dropped": 56814,
+  "dropped_pct": 0.54,
+  "lines_stripped": 876582,
+  "out_shards": 104,
+  "boilerplate_lines": 1095,
+  "boilerplate_sample": [
+    "This website follows the DNPA Code of Ethics.",
+    "First published:",
+    "Copyright © 2022-23 DB Corp ltd., All Rights Reserved",
+    "<બી. આર.>",
+    "<</Â>",
+    "View this post on Instagram",
+    "READ ALSO",
+    "આ પ્રકારના તમામ સમાચાર માટેે App ડાઉનલોડ કરો.",
+    "નીચે આપેલી લીંક પર ક્લિક કરીને જોડાઓ khabarchhe.com ન્યૂઝ સાથે.",
+    "Read Also",
+    "Like this:",
+    "! શૈલી = પૃષ્ઠભૂમિઃ સફેદ કોલન = 9 |",
+    "Search for:",
+    "LikeLike",
+    "!સંરેખિત કરો = \"જમણે\"|",
+    "No reviews",
+    "<Â>",
+    "You must be logged in to post a comment.",
+    "વિશ્વ યુદ્ધ II.",
+    "- News18 Gujarati"
+  ],
+  "drops_by_rule": {
+    "dup_lines": 12541,
+    "top_3gram": 26309,
+    "high_symbol": 2763,
+    "top_line": 12618,
+    "too_short": 2413,
+    "bad_word_len": 117,
+    "low_guj": 7,
+    "few_words": 46
+  },
+  "thresholds": {
+    "MIN_LEN": 200,
+    "MIN_WORDS": 20,
+    "MIN_GUJ_RATIO": 0.7,
+    "MAX_DIGIT_RATIO": 0.5,
+    "MAX_SYMBOL_RATIO": 0.1,
+    "MEAN_WORD_LEN": [
+      2.0,
+      20.0
+    ],
+    "MAX_DUP_LINE_FRAC": 0.3,
+    "MAX_TOP_LINE_FRAC": 0.2,
+    "MAX_TOP_3GRAM_FRAC": 0.2,
+    "BOILERPLATE_MIN_COUNT": 100
+  }
+}
