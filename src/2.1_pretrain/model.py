@@ -13,6 +13,7 @@ class VaaniConfig:
     ffn_mult: float = 8 / 3    # SwiGLU hidden ≈ 8/3·d, rounded to 64
     block_size: int = 2048
     rope_theta: float = 10000.0
+    norm_eps: float = 1e-5
     tie_embeddings: bool = True
 
 
@@ -76,8 +77,8 @@ class MLP(nn.Module):
 class Block(nn.Module):
     def __init__(self, c):
         super().__init__()
-        self.n1, self.attn = RMSNorm(c.d_model), Attention(c)
-        self.n2, self.mlp = RMSNorm(c.d_model), MLP(c)
+        self.n1, self.attn = RMSNorm(c.d_model, c.norm_eps), Attention(c)
+        self.n2, self.mlp  = RMSNorm(c.d_model, c.norm_eps), MLP(c)
     def forward(self, x, cos, sin):
         x = x + self.attn(self.n1(x), cos, sin)
         return x + self.mlp(self.n2(x))
@@ -89,7 +90,7 @@ class Vaani(nn.Module):
         self.c = c
         self.tok = nn.Embedding(c.vocab_size, c.d_model)
         self.blocks = nn.ModuleList([Block(c) for _ in range(c.n_layer)])
-        self.norm = RMSNorm(c.d_model)
+        self.norm = RMSNorm(c.d_model, c.norm_eps)
         self.lm_head = nn.Linear(c.d_model, c.vocab_size, bias=False)
         if c.tie_embeddings:
             self.lm_head.weight = self.tok.weight
