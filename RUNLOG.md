@@ -160,11 +160,93 @@ Results (pack_manifest.json):
 Token budget: ~62 tokens/param at 1 epoch (110M) -> plan 2-3 epochs (124-185 tok/param).
 Stored: gcloud storage cp ~/packed/{train.bin,val.bin,pack_manifest.json} $BUCKET/packed/
 
+### 2.1 Model + trainer code (2026-09-03)
+- model.py (Llama-style ~109.5M), train.py (WSD loop, vectorized memmap loader).
+- Sanity: overfit-one-batch loss 10.53 → 2.18 over 200 steps (learns). ✓
+- Proxy: 40k tok/s @ 22% MFU (stable across batch 4/8/16 → memory-BW bound).
 
-## Not yet done
-- Deduplication (MinHash-LSH)
-- Held-out Gujarati benchmark
-- Decontamination vs. benchmark
-- Tokenizer training
-- Tokenize + pack
-- Model training
+### 2.3 Base pretraining launch (2026-09-03)
+- tmux session `train`; checkpoint auto-sync to GCS every 30 min (session `sync`).
+- Command: python3 -u train1.py --batch-size 8 --grad-accum 64 --compile
+  --max-steps 13000 --warmup 700 --lr 4e-4 --min-lr 4e-5 --decay-frac 0.2
+  --eval-interval 1000 --ckpt-interval 2000
+- Start: step 0 loss 10.53, 40k tok/s, 22% MFU, gnorm ~2. Healthy.
+- ETA ~3.9 days. Checkpoints: ckpt/ckpt_{step}.pt + GCS checkpoints/.
+
+### 2.1 – Throughput / MFU tuning (2026-09-03)
+Goal: find the fastest stable config on a single L4 before committing to the full run.
+Method: `--overfit-one-batch` for correctness, then short `--proxy-steps` runs to measure tok/s + MFU.
+
+- Overfit-one-batch sanity: loss 10.53 → 2.18 over ~200 steps → model + backprop wired correctly.
+- Proxy throughput sweep (micro-batch × options):
+  | config                      | tok/s   | MFU    | notes                          |
+  |-----------------------------|---------|--------|--------------------------------|
+  | B4                          | ~27,000 | ~15%   | data/launch-bound              |
+  | B8                          | ~25,000 | —      | no faster than B4              |
+  | B8 + torch.compile          | 39,800  | 21.8%  | compile ~1.6x                  |
+  | B16 + compile               | 40,600  | 19.4%  | 19.4 GB VRAM, no tok/s gain    |
+  | B16 + compile + vec loader  | 40,900  | —      | 10.5 GB VRAM (memmap fix)      |
+  | + removed per-step .item()  | ~40,000 | ~21.6% | GPU-sync removal, no gain      |
+
+- Finding: throughput plateaus at ~40k tok/s regardless of batch size → the run is
+  **memory-bandwidth bound, not compute bound**. Verified against L4 specs (300 GB/s BW, ~120 TFLOPS bf16): for a 110M model, ~22% MFU is thenrealistic ceiling on L4. The 40–60% MFU figures quoted for LLM training apply to large models on A100/H100, not small models on L4.
+- Incident: CUDA OOM at micro-batch 16 (full [16,2048,32000] fp32 logits materialized in
+  cross_entropy) → settled on micro-batch 8 + grad-accum 64 + `PYTORCH_ALLOC_CONF=expandable_segments:True`.
+- Chosen config: **B8 × grad-accum 64 + compile** = 1,048,576 tokens / optimizer step.
+
+### 2.1 – Model architecture & rationale (model.py, ~109.5M params)
+Llama-style decoder. Config (VaaniConfig):
+`vocab_size=32000, n_layer=12, n_head=12, n_kv_head=12, d_model=768, head_dim=64,
+ffn_mult=8/3 (hidden=2048), block_size=2048, rope_theta=10000, norm_eps=1e-5, tie_embeddings=True`.
+
+Design choices and why:
+- **Pre-norm RMSNorm** (computed in fp32): cheaper than LayerNorm (no mean/bias), and
+  pre-norm gives stable gradients at depth — confirmed by the flat gnorm ~0.19 late in training.
+- **RoPE (theta 10000)**: rotary position encoding, no learned position table (saves params),
+  better length behavior than absolute embeddings.
+- **SwiGLU MLP, ffn_mult 8/3**: the 8/3 multiplier (hidden=2048) keeps the 3-matrix SwiGLU
+  at roughly the same param count as a 4× GELU MLP, while training better.
+- **Full MHA (n_kv_head = n_head = 12)**: GQA’s KV-cache savings are irrelevant at 110M, so
+  we use full multi-head attention for slightly higher quality. Attention via
+  `F.scaled_dot_product_attention(is_causal=True)`.
+- **Tied embeddings**: input embedding = output projection. At 32K×768 = 24.6M params, tying
+  removes a duplicate 24.6M-param matrix — a large fraction of a 110M budget — and regularizes.
+- **No biases anywhere** (Llama/PaLM finding: biases are unnecessary and slightly hurt).
+- **Scaled init**: 0.02 base, output projections (wo, w2) scaled by 1/sqrt(2·n_layer) so
+  residual variance doesn’t grow with depth.
+- **Sizing**: d_model 768 / 12 layers / 12 heads (head_dim 64) is the standard ~110M shape,
+  matched to the SLM++ bootcamp target of ~110M params.
+
+### 2.1 – Base pretraining results (completed 2026-09-08)
+
+Totals:
+- Steps: 13,000 | tokens processed: 13.63B | epochs over train.bin: 2.01 | ~124 tok/param (overtrained vs Chinchilla 20, intentional for an SLM).
+- Wall-clock compute ~4.0 days on 1× L4; steady ~39.5k tok/s, MFU ~21.6%.
+
+Convergence (from train_full.log):
+- Loss 10.53 → 3.3494 (last logged step 12990). LR decayed cleanly to 4.00e-05 floor; gnorm settled ~0.19 (from ~2 at start). No divergence, no gradient explosion.
+- Val perplexity (selected evals): step 1000 ≈67 → 2000 ≈47 → 3000 41.46 → 4000 38.13 →
+  5000 36.05 → 8000 33.94 → 11000 31.19 → 12000 30.58 (train_loss 3.3795 / val_loss 3.4203).
+  No step-13000 eval was run; final val_ppl estimated ~28–29 from continued loss decline.
+  (Authoritative full series: `grep "eval" logs/train_full.log`.)
+- **No overfitting**: train ≈ val throughout.
+
+Generation validation (generate1.py):
+- Fluent, grammatical Gujarati with correct morphology and discourse connectors; article-like
+  structure (headers, lists) reflecting the news/blog-heavy corpus.
+- Repetition loops appear under greedy/low-temp sampling; **eliminated** by repetition penalty
+  + top-p (top-k alone insufficient). Long-range topic drift and factual confabulation persist —
+  expected 110M-scale limits, to be bounded by SFT.
+- Locked eval sampling config: `--temperature 0.8 --top-p 0.9 --repetition-penalty 1.15`.
+
+Artifacts:
+- Checkpoints (GCS): ckpt_{2000,4000,6000,8000,10000,12000}.pt + ckpt_final.pt (step 13000).
+- Logs (GCS + repo): train_20260903_0917.log, train_resume.log, merged train_full.log.
+- Code: model.py, train.py, generate.py.
+
+## Status (2026-09-08)
+Done: corpus build → dedup → clean → English check → tokenizer → tokenize/pack →
+base pretraining (13k steps, ckpt_final.pt) → generation validation.
+Next: SFT (instruction tuning) → eval harness (difficulty-weighted MCQA) → medical fine-tune
+(MedMCQA-Indic, decontaminated).
+

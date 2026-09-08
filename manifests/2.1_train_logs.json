@@ -1,0 +1,109 @@
+{
+  "run_id": "vaani-base-13k",
+  "created": "2026-09-08",
+  "stage": "base_pretraining",
+  "status": "completed",
+  "model": {
+    "arch": "llama-style decoder (pre-norm RMSNorm, RoPE, SwiGLU, full MHA, tied embeddings, no biases)",
+    "params": 109500000,
+    "config": {
+      "vocab_size": 32000,
+      "n_layer": 12,
+      "n_head": 12,
+      "n_kv_head": 12,
+      "d_model": 768,
+      "head_dim": 64,
+      "ffn_mult": 2.6667,
+      "ffn_hidden": 2048,
+      "block_size": 2048,
+      "rope_theta": 10000.0,
+      "norm_eps": 1e-05,
+      "tie_embeddings": true
+    }
+  },
+  "tokenizer": {
+    "file": "tokenizer/tokenizer_bpe_char.json",
+    "type": "char-level BPE (NFKC, Metaspace)",
+    "vocab_size": 32000,
+    "fertility_tok_per_word": 1.3028
+  },
+  "data": {
+    "train_bin": "packed/train.bin",
+    "val_bin": "packed/val.bin",
+    "train_tokens": 6779391293,
+    "val_tokens": 6831554,
+    "dtype": "uint16",
+    "doc_separator": "<eos>",
+    "val_frac": 0.001
+  },
+  "optim": {
+    "optimizer": "AdamW (fused)",
+    "betas": [0.9, 0.95],
+    "weight_decay": 0.1,
+    "weight_decay_scope": "params with dim>=2 only",
+    "grad_clip": 1.0,
+    "precision": "bf16 autocast"
+  },
+  "schedule": {
+    "type": "WSD (warmup-stable-decay), cosine decay over last 20%",
+    "peak_lr": 0.0004,
+    "min_lr": 4e-05,
+    "warmup_steps": 700,
+    "decay_frac": 0.2,
+    "max_steps": 13000
+  },
+  "batching": {
+    "micro_batch_size": 8,
+    "grad_accum": 64,
+    "seq_len": 2048,
+    "tokens_per_optimizer_step": 1048576,
+    "torch_compile": true
+  },
+  "compute": {
+    "gpu": "1x NVIDIA L4 (24GB)",
+    "machine": "g2-standard-4",
+    "zone": "asia-southeast1-b",
+    "image": "PyTorch 2.9 / CUDA 12.9 Deep Learning VM",
+    "throughput_tok_s": 39500,
+    "mfu_pct": 21.6,
+    "l4_peak_bf16_tflops": 120,
+    "wall_clock_days_compute": 4.0
+  },
+  "training_totals": {
+    "steps": 13000,
+    "tokens_processed": 13631488000,
+    "epochs": 2.01,
+    "tokens_per_param": 124.5
+  },
+  "results": {
+    "loss_start": 10.53,
+    "loss_final_step12990": 3.3494,
+    "val_ppl_last_eval_step12000": 30.58,
+    "val_loss_step12000": 3.4203,
+    "val_ppl_final_est": "28-29 (no step-13000 eval run)",
+    "final_lr": 4e-05,
+    "final_gnorm": 0.19,
+    "overfitting": "none (train ~= val throughout)",
+    "divergence": "none",
+    "val_ppl_series_source": "logs/train_full.log (grep 'eval')"
+  },
+  "artifacts": {
+    "checkpoints_gcs": "gs://commanding-iris-474607-u2-guj-corpus/checkpoints/",
+    "checkpoints": ["ckpt_2000.pt", "ckpt_4000.pt", "ckpt_6000.pt", "ckpt_8000.pt", "ckpt_10000.pt", "ckpt_12000.pt", "ckpt_final.pt"],
+    "final_checkpoint": "ckpt_final.pt",
+    "logs_gcs": "gs://commanding-iris-474607-u2-guj-corpus/logs/",
+    "merged_log": "logs/train_full.log",
+    "scripts_gcs": "gs://commanding-iris-474607-u2-guj-corpus/scripts/"
+  },
+  "generation": {
+    "sampler": "generate1.py",
+    "features": ["temperature", "top_k", "top_p", "repetition_penalty", "no_repeat_ngram"],
+    "recommended_eval_config": {"temperature": 0.8, "top_p": 0.9, "repetition_penalty": 1.15}
+  },
+  "incidents": [
+    "CUDA OOM at micro-batch 16 (fp32 logits in cross_entropy) -> micro-batch 8 + grad-accum 64 + expandable_segments",
+    "interrupted at step 3360; resumed from ckpt_2000.pt (steps 2000-3360 recomputed; resume wins in merged log)",
+    "tee output buffering looked stuck -> python3 -u + PYTHONUNBUFFERED=1",
+    "VM default service account read-only storage scope blocked upload -> gcloud auth login"
+  ]
+}
