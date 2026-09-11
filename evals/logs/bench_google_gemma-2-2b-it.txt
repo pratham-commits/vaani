@@ -1,0 +1,19 @@
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:04<00:04,  4.31s/it]Fetching 2 files: 100%|██████████| 2/2 [00:30<00:00, 15.29s/it]Fetching 2 files: 100%|██████████| 2/2 [00:30<00:00, 15.29s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 42.81it/s]
+loaded google/gemma-2-2b-it (template=chat) on cuda
+
+MCQ (general): acc_norm 54/145 = 37.2%
+
+== INSTRUCTION FOLLOWING ==
+  one_word  : 22/22 = 100%
+  short     : 17/22 = 77%
+  detailed  : 16/22 = 73%
+  one_sent  : 22/22 = 100%
+  max3_sent : 22/22 = 100%
+  list_3    : 3/22 = 14%
+  list_5    : 2/22 = 9%
+  numbered  : 9/22 = 41%
+  pure_guj  : 20/22 = 91%
+  OVERALL   : 133/198 = 67%
+
+Open-book (N=500): closed 28.2% | with-context 37.8% | lift +9.6

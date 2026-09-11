@@ -1,0 +1,20 @@
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:03<00:03,  3.30s/it]Fetching 2 files: 100%|██████████| 2/2 [00:29<00:00, 14.96s/it]Fetching 2 files: 100%|██████████| 2/2 [00:29<00:00, 14.96s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 41.33it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+loaded sarvamai/sarvam-1 (template=alpaca) on cuda
+
+MCQ (general): acc_norm 53/145 = 36.6%
+
+== INSTRUCTION FOLLOWING ==
+  one_word  : 0/22 = 0%
+  short     : 0/22 = 0%
+  detailed  : 22/22 = 100%
+  one_sent  : 0/22 = 0%
+  max3_sent : 2/22 = 9%
+  list_3    : 2/22 = 9%
+  list_5    : 3/22 = 14%
+  numbered  : 17/22 = 77%
+  pure_guj  : 1/22 = 5%
+  OVERALL   : 47/198 = 24%
+
+Open-book (N=500): closed 28.8% | with-context 40.2% | lift +11.4

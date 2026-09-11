@@ -1,0 +1,20 @@
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files:  25%|██▌       | 1/4 [01:06<03:20, 66.72s/it]Fetching 4 files:  50%|█████     | 2/4 [01:11<01:11, 35.54s/it]Fetching 4 files:  75%|███████▌  | 3/4 [01:11<00:23, 23.97s/it]Fetching 4 files: 100%|██████████| 4/4 [01:25<00:00, 21.49s/it]Fetching 4 files: 100%|██████████| 4/4 [01:25<00:00, 21.49s/it]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:00<00:00, 20.45it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 25.20it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+loaded Qwen/Qwen2.5-7B-Instruct (template=chat) on cuda
+
+MCQ (general): acc_norm 74/145 = 51.0%
+
+== INSTRUCTION FOLLOWING ==
+  one_word  : 14/22 = 64%
+  short     : 22/22 = 100%
+  detailed  : 0/22 = 0%
+  one_sent  : 22/22 = 100%
+  max3_sent : 22/22 = 100%
+  list_3    : 0/22 = 0%
+  list_5    : 0/22 = 0%
+  numbered  : 3/22 = 14%
+  pure_guj  : 22/22 = 100%
+  OVERALL   : 105/198 = 53%
+
+Open-book (N=500): closed 26.0% | with-context 44.0% | lift +18.0
