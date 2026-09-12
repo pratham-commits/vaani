@@ -52,7 +52,7 @@ medical MCQ ~28% is a universal small-model ceiling, not a data defect).
 │   │   └── generate1.py            # sampling / generation utility
 │   ├── 3.1a_augment_sft.py         # instruction SFT data: base augmentation
 │   ├── 3.1b_augment_sft_v3.py      # targeted bucket augmentation
-│   ├── 3.1c_augment_format_v4.py   # templated format skills (JSON / extraction / lists)
+│   ├── 3.1c_augment_format_v4.py   # templated format-skill augmentation (trained schemas only)
 │   ├── 3.2_train_instruction_sft.py
 │   ├── 4.1_build_medical_sft.py    # medical grounding dataset (raw + sentence-redacted)
 │   ├── 4.2_train_medical_sft.py    # medical SFT (stacks on instruction v4)

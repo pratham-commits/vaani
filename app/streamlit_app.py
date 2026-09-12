@@ -40,15 +40,7 @@ CONTEXTS = load_contexts()
 CATEGORIES = list(CONTEXTS.keys())
 OWN = "મારો પોતાનો સંદર્ભ (my own context)"
 
-STRUCT_CUES = ["યાદી", "મુદ્દા", "મુદ્દાઓ", "ક્રમાંકિત", "ક્રમ", "પગલાં", "પગલા",
-               "બુલેટ", "કોષ્ટક", "કાઢો", "ફોર્મેટ", "json", "list", "numbered",
-               "points", "steps", "bullet", "table", "extract"]
 GREEDY = dict(temperature=1e-6, top_k=1, top_p=1.0, rep_pen=1.0, no_repeat=0)
-
-
-def looks_structured(q):
-    ql = q.lower()
-    return any(c.lower() in ql for c in STRUCT_CUES)
 
 
 def sampling(t):
@@ -113,84 +105,80 @@ def score_option(question, option):
     return sum(lp[len(p) + j - 1, t].item() for j, t in enumerate(opt)) / len(opt)
 
 
-def try_json(raw):
-    cands = [raw]
-    if "{" in raw and "}" in raw:
-        cands.append(raw[raw.find("{"): raw.rfind("}") + 1])
-    for cand in cands:
-        try:
-            return json.dumps(json.loads(cand), ensure_ascii=False, indent=2), True
-        except Exception:
-            continue
-    return raw, False
-
-
 st.set_page_config(page_title="Vaani — Gujarati SLM (110M)", page_icon="🪔")
 st.title("વાણી — Gujarati Small Language Model (~110M)")
-st.caption("Chat / MCQ / JSON · closed-book or open-book (RAG). First run loads the model (~20–40s). "
-           "Illustrative demo, not medical advice.")
+st.caption("A ~110M Gujarati model trained from scratch. Illustrative demo, not medical advice.")
 
-c1, c2 = st.columns(2)
-task = c1.radio("કાર્ય (task)", ["Chat", "MCQ", "JSON"], horizontal=True)
-book = c2.radio("મોડ (mode)", ["Closed-book", "Open-book"], horizontal=True)
+with st.expander("📊 About Vaani & benchmark results", expanded=True):
+    st.markdown("""
+**Vaani** is a ~110M-parameter Gujarati language model, pretrained from scratch and fine-tuned for
+Gujarati instruction-following and grounded (open-book) medical MCQ. Same eval harness for every
+model below — MCQ = acc_norm (log-likelihood); Instruction = rule-based checkers; Open-book =
+MedMCQA-gu with context.
 
-ctx_text = ""
-if book == "Open-book":
-    default_ctx = ""
-    if CATEGORIES:
-        csel = st.selectbox("તબીબી વિષય (topic)", CATEGORIES + [OWN])
-        default_ctx = CONTEXTS.get(csel, {}).get("text", "")
-        if CONTEXTS.get(csel, {}).get("source"):
-            st.caption(f"સ્રોત / source: {CONTEXTS[csel]['source']} — Gujarati Wikipedia, CC BY-SA")
-    ctx_text = st.text_area("સંદર્ભ (context)", value=default_ctx, height=150)
+| Model | Params | MCQ | Instruction | Open-book w/ctx |
+| --- | --- | --- | --- | --- |
+| **Vaani (final)** | **110M** | 38.6% | **70%** | **44.1%** |
+| gemma-2-2b-it | 2B | 37.2% | 67% | 37.8% |
+| sarvam-1 (base) | 2B | 36.6% | 24% | 40.2% |
+| Navarasa-2.0 | 2B | 42.8% | 54% | 35.0% |
+| Qwen2.5-7B-Instruct | 7B | 51.0% | 53% | 44.0% |
 
-prompt = st.text_area("તમારો પ્રશ્ન (your question)", height=90,
-                      placeholder="દા.ત. ડાયાબિટીસનાં લક્ષણો શું છે?")
+These are **averages over full test sets** — any single answer can be wrong. Vaani's strengths are
+Gujarati fluency and, for its size, competitive grounded reading. It is **not** a reliable source of
+unaided medical facts.
+""")
 
-opts_in = ["", "", "", ""]
-if task == "MCQ":
-    st.markdown("**વિકલ્પો ભરો — options (fill 2 to 4):**")
-    opts_in[0] = st.text_input("વિકલ્પ 1")
-    opts_in[1] = st.text_input("વિકલ્પ 2")
-    opts_in[2] = st.text_input("વિકલ્પ 3")
-    opts_in[3] = st.text_input("વિકલ્પ 4 (વૈકલ્પિક / optional)")
+task = st.radio("કાર્ય (task)", ["Chat", "MCQ"], horizontal=True,
+                help="Chat = free-form Gujarati generation (closed-book). MCQ = score answer options.")
 
-max_new, temperature, decode_mode = 200, 0.8, "Auto"
-if task in ("Chat", "JSON"):
-    max_new = st.slider("Max new tokens", 32, 320, 200, 4)
 if task == "Chat":
-    decode_mode = st.radio("ડીકોડિંગ (decoding)", ["Auto", "Sampling", "Greedy"], horizontal=True)
+    prompt = st.text_area("તમારો પ્રશ્ન (your question)", height=90,
+                          placeholder="દા.ત. ગુજરાત વિશે થોડું લખો.")
+    max_new = st.slider("Max new tokens", 32, 320, 200, 4)
     temperature = st.slider("Temperature", 0.1, 1.2, 0.8, 0.05)
+    use_greedy = st.checkbox("Greedy (deterministic) — can repeat on long answers", value=False)
 
-if st.button("ચલાવો (run)", type="primary"):
-    if not prompt.strip():
-        st.warning("કૃપા કરીને પ્રશ્ન લખો.")
-    else:
-        question = build_question(prompt.strip(), book, ctx_text)
-        with st.spinner("વિચારી રહ્યું છે…"):
-            if task == "MCQ":
-                opts = [(i, x.strip()) for i, x in enumerate(opts_in) if x.strip()]
-                if len(opts) < 2:
-                    st.warning("ઓછામાં ઓછા બે વિકલ્પ ભરો.")
-                else:
-                    scored = [(i, x, score_option(question, x)) for i, x in opts]
-                    best = max(scored, key=lambda t: t[2])
-                    for i, x, s in scored:
-                        st.write(f"{'✅' if i == best[0] else '▫️'} વિકલ્પ {i+1}: {x}  ·  score {s:.3f}")
-                    st.caption(f"{book} · MCQ (log-likelihood, acc_norm) · choice: વિકલ્પ {best[0]+1}")
-            elif task == "JSON":
-                raw = generate(question, max_new, **GREEDY)
-                pretty, ok = try_json(raw)
-                st.code(pretty, language="json")
-                st.caption(f"{book} · JSON (greedy) · {'valid JSON ✓' if ok else 'not valid JSON ✗'}")
-            else:
-                if decode_mode == "Greedy":
-                    params, tag = GREEDY, "greedy"
-                elif decode_mode == "Sampling":
-                    params, tag = sampling(temperature), "sampling"
-                elif book == "Open-book" or looks_structured(prompt):
-                    params, tag = GREEDY, "greedy (auto)"
-                else:
-                    params, tag = sampling(temperature), "sampling (auto)"
-                st.write(generate(question, max_new, **params))
-                st.caption(f"{book} · decoding: {tag}")
+    if st.button("ચલાવો (run)", type="primary"):
+        if not prompt.strip():
+            st.warning("કૃપા કરીને પ્રશ્ન લખો.")
+        else:
+            with st.spinner("વિચારી રહ્યું છે…"):
+                params, tag = (GREEDY, "greedy") if use_greedy else (sampling(temperature), "sampling")
+                st.write(generate(prompt.strip(), max_new, **params))
+                st.caption(f"Closed-book · Gujarati fluency · decoding: {tag}")
+
+else:
+    book = st.radio("મોડ (mode)", ["Closed-book", "Open-book"], horizontal=True,
+                    help="Open-book adds a context passage the model reads before scoring options.")
+    ctx_text = ""
+    if book == "Open-book":
+        default_ctx = ""
+        if CATEGORIES:
+            csel = st.selectbox("તબીબી વિષય (topic)", CATEGORIES + [OWN])
+            default_ctx = CONTEXTS.get(csel, {}).get("text", "")
+            if CONTEXTS.get(csel, {}).get("source"):
+                st.caption(f"સ્રોત / source: {CONTEXTS[csel]['source']} — Gujarati Wikipedia, CC BY-SA")
+        ctx_text = st.text_area("સંદર્ભ (context)", value=default_ctx, height=150)
+
+    prompt = st.text_area("પ્રશ્ન (question)", height=80,
+                          placeholder="દા.ત. મલેરિયા કયા જીવજંતુથી ફેલાય છે?")
+    st.markdown("**વિકલ્પો ભરો — options (fill 2 to 4):**")
+    opts_in = [st.text_input("વિકલ્પ 1"), st.text_input("વિકલ્પ 2"),
+               st.text_input("વિકલ્પ 3"), st.text_input("વિકલ્પ 4 (વૈકલ્પિક / optional)")]
+
+    if st.button("ચલાવો (run)", type="primary"):
+        opts = [(i, x.strip()) for i, x in enumerate(opts_in) if x.strip()]
+        if not prompt.strip():
+            st.warning("કૃપા કરીને પ્રશ્ન લખો.")
+        elif len(opts) < 2:
+            st.warning("ઓછામાં ઓછા બે વિકલ્પ ભરો.")
+        else:
+            with st.spinner("વિચારી રહ્યું છે…"):
+                question = build_question(prompt.strip(), book, ctx_text)
+                scored = [(i, x, score_option(question, x)) for i, x in opts]
+                best = max(scored, key=lambda t: t[2])
+                for i, x, s in scored:
+                    st.write(f"{'✅' if i == best[0] else '▫️'} વિકલ્પ {i+1}: {x}  ·  score {s:.3f}")
+                st.caption(f"{book} · ranked by likelihood (acc_norm) · picks વિકલ્પ {best[0]+1}. "
+                           "~44% average — try several; it won't get every one.")
