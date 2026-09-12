@@ -44,7 +44,7 @@ GREEDY = dict(temperature=1e-6, top_k=1, top_p=1.0, rep_pen=1.0, no_repeat=0)
 
 
 def sampling(t):
-    return dict(temperature=t, top_k=40, top_p=0.9, rep_pen=1.15, no_repeat=3)
+    return dict(temperature=t, top_k=40, top_p=0.9, rep_pen=1.2, no_repeat=3)
 
 
 def prompt_ids(q):
