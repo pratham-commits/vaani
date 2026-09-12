@@ -87,7 +87,7 @@ Every script is numbered to match `RUNLOG.md`, `DECISIONS.md`, and the git commi
 | 5.3 | `src/5.3_make_level1_log.py` | Level-1 validity log (loss reduction, convergence, no-NaN) |
 
 ## Reproduce
-Environment: Python 3.10; install pinned deps with `pip install -r requirements.txt`.
+Environment: Python 3.10; install pinned deps with `pip install -r requirements-train.txt`.
 Prep (steps 1.2–1.6) runs on CPU; training/eval needs a single GPU (developed on NVIDIA L4).
 
 **Pretraining** — run from inside the pretrain folder (train1.py imports `model`). The argparse
